@@ -1,0 +1,7 @@
+services:
+  geocoder.http_adapter:
+    class: \Ivory\HttpAdapter\CurlHttpAdapter
+
+parameters:
+  annotated_plugins_auto_discovery.geocoder:
+    - { plugin_manager_name: 'plugin.manager.geocoder', directory: 'Plugin/Geocoder', class: 'Drupal\geocoder\Annotation\GeocoderPlugin' }

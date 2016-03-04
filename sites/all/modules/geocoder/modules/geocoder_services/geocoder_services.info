@@ -1,0 +1,13 @@
+name = Geocoder Services
+description = Provides a Geocoding service using contrib module Services.
+core = 7.x
+
+dependencies[] = services
+dependencies[] = geocoder
+
+; Information added by Drupal.org packaging script on 2016-01-18
+version = "7.x-2.x-dev"
+core = "7.x"
+project = "geocoder"
+datestamp = "1453099449"
+

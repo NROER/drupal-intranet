@@ -1,0 +1,12 @@
+name = Geocoder Field
+description = Widgets and formatters for the Geocoder module.
+core = 7.x
+
+dependencies[] = geocoder
+dependencies[] = addressfield
+; Information added by Drupal.org packaging script on 2016-01-18
+version = "7.x-2.x-dev"
+core = "7.x"
+project = "geocoder"
+datestamp = "1453099449"
+
