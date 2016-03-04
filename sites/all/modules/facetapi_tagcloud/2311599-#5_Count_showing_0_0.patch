@@ -1,0 +1,32 @@
+diff --git a/plugins/facetapi/widget_tagcloud.inc b/plugins/facetapi/widget_tagcloud.inc
+index 14eb0f9..d231257 100644
+--- a/plugins/facetapi/widget_tagcloud.inc
++++ b/plugins/facetapi/widget_tagcloud.inc
+@@ -64,7 +64,7 @@ class FacetapiWidgetTagcloud extends FacetapiWidget {
+     $max = -1e9;
+     foreach ($element as $value => $item) {
+       $log = log($item['#count']);
+-      $element[$value]['#count'] = $log;
++      $element[$value]['#math'] = $log;
+       $min = min($min, $log);
+       $max = max($max, $log);
+     }
+@@ -77,8 +77,8 @@ class FacetapiWidgetTagcloud extends FacetapiWidget {
+     foreach ($element as $value => $item) {
+       // Ensure active items are always rendered using the largest weight.
+       // @see http://drupal.org/node/1367824
+-      if ($item['#count'] != $max) {
+-        $weight = 1 + floor((int) $levels * ($item['#count'] - $min) / $range);
++      if ($item['#math'] != $max) {
++        $weight = 1 + floor((int) $levels * ($item['#math'] - $min) / $range);
+       }
+       else {
+         $weight = $levels;
+@@ -107,6 +107,7 @@ class FacetapiWidgetTagcloud extends FacetapiWidget {
+       $variables = array(
+         'text' => $item['#markup'],
+         'path' => $item['#path'],
++        'count' => $item['#count'],
+         'options' => array(
+           'attributes' => $item['#attribues'],
+           'html' => $item['#html'],
