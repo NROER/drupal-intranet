@@ -267,7 +267,7 @@ class views_plugin_exposed_form extends views_plugin {
       $form = array_merge_recursive($form, array('#attributes' => array('class' => array('ctools-auto-submit-full-form'))));
       $form['submit']['#attributes']['class'][] = 'ctools-use-ajax';
       $form['submit']['#attributes']['class'][] = 'ctools-auto-submit-click';
-      $form['#attached']['js'][] = drupal_get_path('module', 'ctools') . '/js/auto-submit.js';
+      // anish $form['#attached']['js'][] = drupal_get_path('module', 'ctools') . '/js/auto-submit.js';
 
       if (!empty($this->options['autosubmit_hide'])) {
         $form['submit']['#attributes']['class'][] = 'js-hide';
