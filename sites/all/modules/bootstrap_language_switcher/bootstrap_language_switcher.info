@@ -1,0 +1,6 @@
+name = Bootstrap Language Switcher
+package = Multilingual
+description = A simple Bootstrap language switcher block.
+dependencies[] = locale
+configure = 'admin/structure/block'
+core = 7.x

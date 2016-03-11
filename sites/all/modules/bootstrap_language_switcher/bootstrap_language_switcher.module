@@ -1,0 +1,152 @@
+<?php
+/**
+ * @file
+ * A simple Bootstrap language switcher block..
+ */
+
+/**
+ * Implements hook_block_info().
+ */
+function bootstrap_language_switcher_block_info() {
+  include_once DRUPAL_ROOT . '/includes/language.inc';
+  $block = array();
+  $info = language_types_info();
+  foreach (language_types_configurable(FALSE) as $type) {
+    $block[$type] = array(
+      'info' => t('Bootstrap Language Switcher (@type)', array('@type' => $info[$type]['name'])),
+      'cache' => DRUPAL_NO_CACHE,
+    );
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_block_configure().
+ */
+function bootstrap_language_switcher_block_configure($delta = '') {
+  $settings = _bootstrap_language_switcher_get_settings();
+  $form = array();
+
+  $form['bootstrap_language_switcher'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Bootstrap Language Switcher settings'),
+    '#weight' => 0,
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $form['bootstrap_language_switcher']['showall'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show all enabled languages'),
+    '#description' => t('Show all languages in the switcher no matter if there is a translation for the node or not. For languages without translation the switcher will redirect to homepage.'),
+    '#default_value' => $settings['showall'],
+  );
+  $form['bootstrap_language_switcher']['btntype'] = array(
+    '#type' => 'select',
+    '#title' => t('Bootstrap button type'),
+    '#options' => array(
+      'btn-default' => 'Default',
+      'btn-primary' => 'Primary',
+    ),
+    '#default_value' => $settings['btntype'],
+  );
+  return $form;
+}
+
+/**
+ * Implements hook_block_save().
+ */
+function bootstrap_language_switcher_block_save($delta = '', $edit = array()) {
+  $bootstrap_language_switcher_settings = array(
+    'showall' => $edit['showall'],
+    'btntype' => $edit['btntype'],
+  );
+  variable_set('bootstrap_language_switcher_settings', $bootstrap_language_switcher_settings);
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function bootstrap_language_switcher_block_view($type = 'language') {
+  if (drupal_multilingual()) {
+    $settings = _bootstrap_language_switcher_get_settings();
+    $module_path = drupal_get_path('module', 'bootstrap_language_switcher');
+    $options = array();
+    $path = drupal_is_front_page() ? '<front>' : $_GET['q'];
+    $languages = language_negotiation_get_switch_links($type, $path);
+
+    // Check if we should support Domain access.
+    if ($domain_locale_exists = module_exists('domain_locale')) {
+      global $_domain;
+      $domain_languages = domain_locale_lookup($_domain['domain_id']);
+    }
+
+    // Now we iterate on $languages to build needed options for dropdown.
+    foreach ($languages->links as $lang_code => $lang_options) {
+      // The language is not enabled on this domain
+      if ($domain_locale_exists && !array_key_exists($lang_code, $domain_languages)) {
+        continue;
+      }
+
+      // There is no translation for this language and not all languages are shown.
+      if (!isset($lang_options['href']) && (!$settings['showall'])) {
+        continue;
+      }
+
+      // Build the options in an associative array (lang_code => lang_link).
+      $href = isset($lang_options['href']) ? $lang_options['href'] : '<front>';
+      $lang_link = check_plain(url($href, array(
+        'language' => $lang_options['language'],
+        'query' => isset($lang_options['query']) ? $lang_options['query'] : '',
+      )));
+      $options[$lang_code] = $lang_link;
+
+      // Determine selected language option.
+      if (isset($lang_options['href']) && ($lang_options['href'] == $_GET['q']
+        || ($lang_options['href'] == '<front>' && drupal_is_front_page()))
+        && ($lang_code == $GLOBALS[$type]->language)) {
+        $selected_option = $lang_code;
+      }
+    }
+
+    // Position language switcher to the right of the navbar.
+    drupal_add_css('.navbar #block-bootstrap-language-switcher-language { float: right; }', array('type' => 'inline'));
+
+    // Build markup for the Bootstrap languages switcher.
+    $default_option = isset($selected_option) ? $selected_option : $options[0];
+    //anish $markup = '<div class="btn-group">';
+    //anish $markup .= '  <button class="btn ' . $settings['btntype'] . ' btn-sm navbar-btn dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+    //anish $markup .= '    ' . $default_option. ' <span class="caret"></span>';
+    //anish $markup .= '  </button>';
+
+    $markup = '<div class="collapse navbar-collapse" id="bs-navbar-collapse-1">';
+    $markup .= '  <ul class="nav navbar-nav">';
+    $markup .= '    <li class="dropdown">';
+    $markup .= t('      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Language<span class="caret"></span></a>');
+    $markup .= '      <ul class="dropdown-menu">';
+
+
+    foreach ($options as $lang_code => $lang_link) {
+      $markup .= '    <li><a href="' . $lang_link . '">' . $languages->links[$lang_code]['title'] . '</a></li>';
+    }
+    $markup .= '  </ul>';
+    $markup .= '</div>';
+
+    // Set the block subject and content.
+    if (isset($languages->links)) {
+      $block['subject'] = '';
+      $block['content'] = $markup;
+      return $block;
+    }
+  }
+}
+
+/**
+ * Helper function to get Bootstrap Languages settings
+ */
+function _bootstrap_language_switcher_get_settings($settings = NULL) {
+  $defaults = array(
+    'showall' => 1,
+    'btntype' => 'btn-default',
+  );
+  return array_merge($defaults, variable_get('bootstrap_language_switcher_settings', $defaults));
+}

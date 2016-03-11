@@ -1,0 +1,7 @@
+name = Facet API Bootstrap Dropdown
+description = Provides a dropdown for facets.
+dependencies[] = facetapi
+package = Search Toolkit
+core = 7.x
+
+files[] = dropdown_widget.inc

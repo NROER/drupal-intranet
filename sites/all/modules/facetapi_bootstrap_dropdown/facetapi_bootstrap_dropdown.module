@@ -1,0 +1,117 @@
+<?php
+
+/**
+ * Implements hook_facetapi_widgets().
+ */
+function facetapi_dropdown_facetapi_widgets() {
+  return array(
+    'dropdown' => array(
+      'handler' => array(
+        'label' => t('Bootstrap Dropdown Links'),
+        'class' => 'FacetapiDropdown',
+        'query types' => array('term', 'date'),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function facetapi_dropdown_theme_registry_alter(&$theme_registry) {
+  // FacetAPI Dropdown only needs to inject or wrap these theming functions with additional markup.
+  // When replacing the theme funciton, we need to save the origial array and invoke the original theming
+  // function in ours. This allows compatibility with other modules and themes that have existing overrides.
+  foreach (array('facetapi_title', 'facetapi_link_inactive', 'facetapi_link_active', 'facetapi_deactivate_widget') as $theme_function) {
+    $theme_registry['facetapi_dropdown_' . $theme_function . '_original'] = $theme_registry[$theme_function];
+    $theme_registry[$theme_function]['function'] = 'facetapi_dropdown_' . $theme_function;
+  }
+}
+
+/**
+ * Implements theme_facetapi_link_title().
+ */
+function facetapi_dropdown_facetapi_title($variables) {
+  return;
+}
+
+/**
+ * Implements theme_facetapi_link_inactive().
+ */
+function facetapi_dropdown_facetapi_link_inactive($variables) {
+  return '<span class="glyphicon glyphicon-plus">' . theme('facetapi_dropdown_facetapi_link_inactive_original', $variables) . '</span>';
+}
+
+/**
+ * Implements theme_facetapi_link_active().
+ */
+function facetapi_dropdown_facetapi_link_active($variables) {
+  // This function overwrites the original theme_facetapi_link_active,
+  // This was done b/c the link text is outside the link in the original.
+  // There may be a better way but this is good for now.
+
+  // Sanitizes the link text if necessary.
+  $sanitize = empty($variables['options']['html']);
+  $link_text = ($sanitize) ? check_plain($variables['text']) : $variables['text'];
+
+  // Theme function variables for accessible markup.
+  // @see http://drupal.org/node/1316580
+  $accessible_vars = array(
+    'text' => $variables['text'],
+    'active' => TRUE,
+  );
+
+  // Builds link, passes through t() which gives us the ability to change the
+  // position of the widget on a per-language basis.
+  $replacements = array(
+    '!facetapi_link_text' => $link_text,
+    '!facetapi_accessible_markup' => theme('facetapi_accessible_markup', $accessible_vars),
+  );
+  $variables['text'] = t('!facetapi_link_text !facetapi_accessible_markup', $replacements);
+  $variables['options']['html'] = TRUE;
+  return '<span class="glyphicon glyphicon-minus">' . theme_link($variables) . '</span>';
+}
+
+/**
+ * Implements theme_facetapi_deactivate_widget.
+ */
+function facetapi_dropdown_facetapi_deactivate_widget($variables) {
+  // Get rid of minus sign as we are using bootstrap icons for that.
+  return '';
+}
+
+/**
+ * Implements hook_block_view_alter().
+ */
+function facetapi_dropdown_block_view_alter($data, $block) {
+  if (isset($data['content']['#facet'])) {
+    $settings = $data['content']['#settings'];
+    if (is_object($settings) && isset($settings->settings) && $settings->settings['widget'] == 'dropdown') {
+      facetapi_dropdown_static($block->delta);
+    }
+  }
+}
+
+/**
+ * Function that manages a static array of the block deltas that contain
+ * dropdown facets.
+ */
+function facetapi_dropdown_static($delta = NULL) {
+  $facetapi_dropdown = &drupal_static(__FUNCTION__, array());
+  if ($delta) {
+    // Add the given delta to our array of dropdown facets.
+    $facetapi_dropdown[] = $delta;
+  }
+  return $facetapi_dropdown;
+}
+
+
+/**
+ * Implements hook_preprocess_block().
+ */
+function facetapi_dropdown_preprocess_block(&$variables) {
+  $dropdown_facets = facetapi_dropdown_static();
+  if (in_array($variables['block']->delta, $dropdown_facets)) {
+    $variables['classes_array'][] = 'facetapi-dropdown-menu';
+  }
+}
